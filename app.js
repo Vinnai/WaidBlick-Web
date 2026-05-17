@@ -15,6 +15,7 @@ const saveBtn = document.getElementById("save-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settingsClose = document.getElementById("settings-close");
 const settingsModal = document.getElementById("settings-modal");
+const settingsSensitivitySlider = document.getElementById("settings-sensitivity");
 const settingsSensitivityDisplay = document.getElementById("settings-sensitivity-display");
 const colorToggle = document.getElementById("color-toggle");
 const statusEl = document.getElementById("status");
@@ -80,12 +81,17 @@ function persistSettings(s) {
 }
 
 function applySettingsToUI(s) {
-  slider.value = s.sensitivity;
-  sliderValue.textContent = s.sensitivity;
-  settingsSensitivityDisplay.textContent = s.sensitivity;
+  applySensitivityToUI(s.sensitivity);
   dropSizeSlider.value = s.dropSize;
   dropSizeValue.textContent = s.dropSize;
   setHighlightColor(s.color);
+}
+
+function applySensitivityToUI(value) {
+  slider.value = value;
+  settingsSensitivitySlider.value = value;
+  sliderValue.textContent = value;
+  settingsSensitivityDisplay.textContent = value;
 }
 
 function getCurrentSettings() {
@@ -122,8 +128,12 @@ function clamp(v, lo, hi) {
 // ---------- Event-Bindings ----------
 
 slider.addEventListener("input", () => {
-  sliderValue.textContent = slider.value;
-  settingsSensitivityDisplay.textContent = slider.value;
+  applySensitivityToUI(slider.value);
+  updateDirtyIndicator();
+});
+
+settingsSensitivitySlider.addEventListener("input", () => {
+  applySensitivityToUI(settingsSensitivitySlider.value);
   updateDirtyIndicator();
 });
 
@@ -171,7 +181,7 @@ saveBtn.addEventListener("click", () => {
 });
 
 settingsBtn.addEventListener("click", () => {
-  settingsSensitivityDisplay.textContent = slider.value;
+  applySensitivityToUI(slider.value);
   updateDirtyIndicator();
   settingsModal.hidden = false;
 });
