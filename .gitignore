@@ -1,0 +1,9 @@
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Lokale Notizen / Entwürfe
+*.local.*
+notes.local.md

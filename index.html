@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>WaidBlick</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <video id="video" playsinline autoplay muted></video>
+  <canvas id="canvas"></canvas>
+
+  <div id="overlay-top">
+    <div id="status">Tippe „Start" und erlaube den Kamerazugriff</div>
+    <div id="fps"></div>
+  </div>
+
+  <div id="controls">
+    <div class="row">
+      <label for="sensitivity">Empfindlichkeit</label>
+      <span id="sensitivity-value">50</span>
+    </div>
+    <input type="range" id="sensitivity" min="0" max="100" value="50">
+    <div class="buttons">
+      <button id="start-btn">Start</button>
+      <button id="freeze-btn" disabled>Standbild</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
