@@ -43,9 +43,10 @@ Reines HTML/JS — kein Build, keine Abhängigkeiten. Einfach in Chrome/Firefox/
 Empfohlen: über einen lokalen HTTP-Server, weil `getUserMedia` auf `file://` blockiert wird:
 
 ```powershell
-# Aus dem Projektordner heraus
+# Aus dem Projektordner heraus — wichtig: --directory public,
+# damit der .git-Ordner NICHT mit ausgeliefert wird.
 cd c:\Projekte\WaidBlick-Web
-python -m http.server 8000
+python -m http.server 8000 --directory public
 # → http://localhost:8000 im Browser öffnen
 ```
 
@@ -64,9 +65,9 @@ winget install --id Cloudflare.cloudflared
 **Jede Test-Sitzung:**
 
 ```powershell
-# Terminal 1 — lokaler Server
+# Terminal 1 — lokaler Server, ausgeliefert wird nur public/
 cd c:\Projekte\WaidBlick-Web
-python -m http.server 8000
+python -m http.server 8000 --directory public
 
 # Terminal 2 — Tunnel
 cloudflared tunnel --url http://localhost:8000
@@ -94,9 +95,12 @@ Die URL ist nur für die Laufzeit dieses Tunnels gültig — bei jedem Neustart 
 
 ```
 WaidBlick-Web/
-├── index.html               # UI: Video, Canvas, Slider, Buttons
-├── style.css                # Vollbild-Layout, iOS-Anpassungen
-├── app.js                   # Kamera + HSV-Filter + Highlight
-├── manifest.webmanifest     # PWA-Grundlage
-└── README.md
+├── public/                  # was öffentlich ausgeliefert wird
+│   ├── index.html           # UI: Video, Canvas, Slider, Buttons
+│   ├── style.css            # Vollbild-Layout, iOS-Anpassungen
+│   ├── app.js               # Kamera + HSV-Filter + Größenfilter
+│   └── manifest.webmanifest # PWA-Grundlage
+├── README.md
+├── .gitignore
+└── .git/                    # NICHT öffentlich exponieren — daher public/ als Webroot
 ```
