@@ -1,14 +1,17 @@
-// WaidBlick — HSV-basierte Schweiß-Erkennung im Live-Kamerabild.
-// Markiert rot/braun-rote Pixel mit der gewählten Highlight-Farbe.
+// WaidBlick — HSV-basierte Schweiß-Erkennung im Live-Kamerabild
+// mit Größenfilter pro zusammenhängender Pixelinsel.
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
 const slider = document.getElementById("sensitivity");
 const sliderValue = document.getElementById("sensitivity-value");
+const dropSizeSlider = document.getElementById("drop-size");
+const dropSizeValue = document.getElementById("drop-size-value");
 const startBtn = document.getElementById("start-btn");
 const freezeBtn = document.getElementById("freeze-btn");
 const resetBtn = document.getElementById("reset-btn");
+const saveBtn = document.getElementById("save-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settingsClose = document.getElementById("settings-close");
 const settingsModal = document.getElementById("settings-modal");
@@ -17,9 +20,13 @@ const colorToggle = document.getElementById("color-toggle");
 const statusEl = document.getElementById("status");
 const fpsEl = document.getElementById("fps");
 
-const STORAGE_KEY = "waidblick.settings.v1";
-const DEFAULT_SENSITIVITY = 50;
-const DEFAULT_COLOR = "cyan";
+const STORAGE_KEY = "waidblick.settings.v2";
+
+const DEFAULT_SETTINGS = Object.freeze({
+  sensitivity: 50,
+  dropSize: 50,
+  color: "cyan",
+});
 
 const HIGHLIGHT_COLORS = {
   cyan: [0, 255, 255],
@@ -31,38 +38,73 @@ let running = false;
 let frozen = false;
 let lastFrameTs = 0;
 let fpsSmoothed = 0;
-let highlightColor = DEFAULT_COLOR;
+let highlightColor = DEFAULT_SETTINGS.color;
+let savedSettings = { ...DEFAULT_SETTINGS };
+
+// Wiederverwendete Puffer für die Blob-Analyse
+let maskBuf = null;
+let labelBuf = null;
+let parentBuf = null;
+let areaBuf = null;
 
 // ---------- Persistenz ----------
 
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
-    if (typeof s.sensitivity === "number") {
-      const v = Math.max(0, Math.min(100, s.sensitivity));
-      slider.value = v;
-      sliderValue.textContent = v;
-      settingsSensitivityDisplay.textContent = v;
-    }
-    if (s.color && HIGHLIGHT_COLORS[s.color]) {
-      setHighlightColor(s.color);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (typeof s.sensitivity === "number") {
+        savedSettings.sensitivity = clamp(s.sensitivity, 0, 100);
+      }
+      if (typeof s.dropSize === "number") {
+        savedSettings.dropSize = clamp(s.dropSize, 0, 100);
+      }
+      if (s.color && HIGHLIGHT_COLORS[s.color]) {
+        savedSettings.color = s.color;
+      }
     }
   } catch (e) {
     console.warn("Konnte Einstellungen nicht laden:", e);
   }
+  applySettingsToUI(savedSettings);
+  updateDirtyIndicator();
 }
 
-function saveSettings() {
+function persistSettings(s) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      sensitivity: parseInt(slider.value, 10),
-      color: highlightColor,
-    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch (e) {
     console.warn("Konnte Einstellungen nicht speichern:", e);
   }
+}
+
+function applySettingsToUI(s) {
+  slider.value = s.sensitivity;
+  sliderValue.textContent = s.sensitivity;
+  settingsSensitivityDisplay.textContent = s.sensitivity;
+  dropSizeSlider.value = s.dropSize;
+  dropSizeValue.textContent = s.dropSize;
+  setHighlightColor(s.color);
+}
+
+function getCurrentSettings() {
+  return {
+    sensitivity: parseInt(slider.value, 10),
+    dropSize: parseInt(dropSizeSlider.value, 10),
+    color: highlightColor,
+  };
+}
+
+function settingsEqual(a, b) {
+  return a.sensitivity === b.sensitivity &&
+         a.dropSize === b.dropSize &&
+         a.color === b.color;
+}
+
+function updateDirtyIndicator() {
+  const dirty = !settingsEqual(getCurrentSettings(), savedSettings);
+  saveBtn.classList.toggle("has-changes", dirty);
 }
 
 function setHighlightColor(name) {
@@ -73,12 +115,28 @@ function setHighlightColor(name) {
   });
 }
 
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
+}
+
 // ---------- Event-Bindings ----------
 
 slider.addEventListener("input", () => {
   sliderValue.textContent = slider.value;
   settingsSensitivityDisplay.textContent = slider.value;
-  saveSettings();
+  updateDirtyIndicator();
+});
+
+dropSizeSlider.addEventListener("input", () => {
+  dropSizeValue.textContent = dropSizeSlider.value;
+  updateDirtyIndicator();
+});
+
+colorToggle.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-color]");
+  if (!btn) return;
+  setHighlightColor(btn.dataset.color);
+  updateDirtyIndicator();
 });
 
 startBtn.addEventListener("click", async () => {
@@ -98,19 +156,23 @@ freezeBtn.addEventListener("click", () => {
 });
 
 resetBtn.addEventListener("click", () => {
-  slider.value = DEFAULT_SENSITIVITY;
-  sliderValue.textContent = DEFAULT_SENSITIVITY;
-  settingsSensitivityDisplay.textContent = DEFAULT_SENSITIVITY;
-  setHighlightColor(DEFAULT_COLOR);
-  localStorage.removeItem(STORAGE_KEY);
+  applySettingsToUI(savedSettings);
+  updateDirtyIndicator();
   if (frozen) {
     frozen = false;
     freezeBtn.textContent = "Standbild";
   }
 });
 
+saveBtn.addEventListener("click", () => {
+  savedSettings = getCurrentSettings();
+  persistSettings(savedSettings);
+  updateDirtyIndicator();
+});
+
 settingsBtn.addEventListener("click", () => {
   settingsSensitivityDisplay.textContent = slider.value;
+  updateDirtyIndicator();
   settingsModal.hidden = false;
 });
 
@@ -118,14 +180,7 @@ settingsClose.addEventListener("click", () => {
   settingsModal.hidden = true;
 });
 
-colorToggle.addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-color]");
-  if (!btn) return;
-  setHighlightColor(btn.dataset.color);
-  saveSettings();
-});
-
-// ---------- Kamera + Filter ----------
+// ---------- Kamera ----------
 
 async function startCamera() {
   statusEl.textContent = "Kamera wird gestartet ...";
@@ -166,13 +221,21 @@ function stopCamera() {
   video.srcObject = null;
 }
 
+// ---------- Frame-Verarbeitung ----------
+
 function processFrame(ts) {
   if (!running) return;
 
   if (!frozen && video.readyState >= 2) {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    applyBloodFilter(imageData.data, parseInt(slider.value, 10));
+    applyBloodFilter(
+      imageData.data,
+      canvas.width,
+      canvas.height,
+      parseInt(slider.value, 10),
+      parseInt(dropSizeSlider.value, 10),
+    );
     ctx.putImageData(imageData, 0, 0);
 
     if (lastFrameTs) {
@@ -187,14 +250,28 @@ function processFrame(ts) {
   requestAnimationFrame(processFrame);
 }
 
-function applyBloodFilter(data, sensitivity) {
+function ensureBuffers(size) {
+  if (!maskBuf || maskBuf.length !== size) {
+    maskBuf = new Uint8Array(size);
+    labelBuf = new Int32Array(size);
+    parentBuf = new Int32Array(Math.max(1024, Math.floor(size / 4)));
+    areaBuf = new Int32Array(parentBuf.length);
+  } else {
+    maskBuf.fill(0);
+    labelBuf.fill(0);
+  }
+}
+
+function applyBloodFilter(data, width, height, sensitivity, dropSize) {
+  const size = width * height;
+  ensureBuffers(size);
+
+  // Phase 1: Binärmaske aus HSV-Farbprüfung
   const hueWidth = 5 + (sensitivity / 100) * 25;
   const minSat = 0.35 - (sensitivity / 100) * 0.20;
   const minVal = 0.15;
 
-  const [hlR, hlG, hlB] = HIGHLIGHT_COLORS[highlightColor];
-
-  for (let i = 0; i < data.length; i += 4) {
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
@@ -211,13 +288,97 @@ function applyBloodFilter(data, sensitivity) {
     let h = 60 * ((g - b) / d);
     if (h < 0) h += 360;
 
-    const isRed = h <= hueWidth || h >= 360 - hueWidth;
-    if (!isRed) continue;
+    if (h <= hueWidth || h >= 360 - hueWidth) {
+      maskBuf[p] = 1;
+    }
+  }
 
+  // Phase 2: Connected Components (Union-Find, 4er-Nachbarschaft)
+  let nextLabel = 1;
+  if (parentBuf.length < size / 2) {
+    parentBuf = new Int32Array(size);
+    areaBuf = new Int32Array(size);
+  }
+  parentBuf[0] = 0;
+
+  for (let y = 0; y < height; y++) {
+    const rowStart = y * width;
+    for (let x = 0; x < width; x++) {
+      const idx = rowStart + x;
+      if (!maskBuf[idx]) continue;
+
+      const top = y > 0 ? labelBuf[idx - width] : 0;
+      const left = x > 0 ? labelBuf[idx - 1] : 0;
+
+      if (top && left) {
+        const rTop = findRoot(top);
+        const rLeft = findRoot(left);
+        labelBuf[idx] = rTop;
+        if (rTop !== rLeft) {
+          parentBuf[rLeft] = rTop;
+        }
+      } else if (top) {
+        labelBuf[idx] = top;
+      } else if (left) {
+        labelBuf[idx] = left;
+      } else {
+        if (nextLabel >= parentBuf.length) {
+          // Defensive Vergrößerung — sollte selten passieren
+          const newSize = parentBuf.length * 2;
+          const newParent = new Int32Array(newSize);
+          newParent.set(parentBuf);
+          parentBuf = newParent;
+          const newArea = new Int32Array(newSize);
+          newArea.set(areaBuf);
+          areaBuf = newArea;
+        }
+        parentBuf[nextLabel] = nextLabel;
+        labelBuf[idx] = nextLabel;
+        nextLabel++;
+      }
+    }
+  }
+
+  // Auflösen der Labels auf Wurzeln + Flächen zählen
+  for (let i = 0; i < nextLabel; i++) areaBuf[i] = 0;
+  for (let i = 0; i < size; i++) {
+    const l = labelBuf[i];
+    if (l) {
+      const root = findRoot(l);
+      labelBuf[i] = root;
+      areaBuf[root]++;
+    }
+  }
+
+  // Phase 3: Größenfilter + Highlight schreiben
+  // Tropfengröße 0..100: schmaler bis breiter erlaubter Bereich
+  // Annahme ~50 cm Smartphone-Höhe: 1 mm ≈ 3 px → typische Tropfenflächen ≈ 5..3000 px²
+  const minArea = Math.max(4, Math.round(40 - (dropSize / 100) * 36));
+  const maxArea = Math.round(800 + (dropSize / 100) * 9200);
+
+  const [hlR, hlG, hlB] = HIGHLIGHT_COLORS[highlightColor];
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    const root = labelBuf[p];
+    if (!root) continue;
+    const area = areaBuf[root];
+    if (area < minArea || area > maxArea) continue;
     data[i] = hlR;
     data[i + 1] = hlG;
     data[i + 2] = hlB;
   }
+}
+
+function findRoot(label) {
+  let r = label;
+  while (parentBuf[r] !== r) r = parentBuf[r];
+  // Pfadkompression
+  let p = label;
+  while (parentBuf[p] !== r) {
+    const next = parentBuf[p];
+    parentBuf[p] = r;
+    p = next;
+  }
+  return r;
 }
 
 // ---------- Init ----------

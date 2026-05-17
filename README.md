@@ -7,17 +7,34 @@ Markiert rot/braun-rote Bereiche (potenzielles Blut auf Waldboden) mit **Cyan**,
 ## Bedienung
 
 1. App im Safari öffnen → **Start** tippen → Kamerazugriff erlauben
-2. **Empfindlichkeit** mit dem Schieberegler anpassen:
+2. **Empfindlichkeit** (Hauptbildschirm) mit dem Schieberegler anpassen:
    - links (0) = streng, nur kräftige Rot-Töne
    - rechts (100) = locker, auch dunklere/bräunlichere Töne (mehr Treffer, mehr Fehlalarme)
 3. **Standbild** friert das Bild zur genaueren Betrachtung ein.
-4. **Reset** setzt Empfindlichkeit und Highlight-Farbe auf die Werkseinstellungen zurück und löscht die gespeicherten Einstellungen.
-5. **Zahnrad oben rechts** öffnet die Einstellungen — derzeit:
-   - **Highlight-Farbe** Cyan ↔ Gelb (je nach Lichtverhältnis am besten sichtbar)
-   - Anzeige der aktuell gespeicherten Empfindlichkeit
+4. **Reset** holt die zuletzt **gespeicherten** Einstellungen zurück (oder, falls noch nie gespeichert wurde, die Werkseinstellungen).
+5. **Zahnrad oben rechts** öffnet die Einstellungen — enthält:
+   - aktuell wirksame **Empfindlichkeit** (zur Kontrolle, anpassbar über den Schieberegler im Hauptbildschirm)
+   - **Tropfengröße** — Slider für den Größenfilter (siehe unten)
+   - **Highlight-Farbe** Cyan ↔ Gelb
    - Platzhalter für spätere ML-Modell-Konfiguration
+   - **Speichern**-Button am Ende — erst durch Tippen werden Änderungen persistiert. Solange ungespeicherte Änderungen vorliegen, ist vor dem Button ein roter Punkt sichtbar.
 
-Empfindlichkeit und Highlight-Farbe werden im Browser persistent gespeichert (`localStorage`) und beim nächsten Öffnen automatisch wiederhergestellt — keine Cloud, keine Server.
+## Persistenz-Logik
+
+- Änderungen am Empfindlichkeits-Slider, am Tropfengröße-Slider oder an der Highlight-Farbe wirken **sofort live**, sind aber zunächst **nur in der aktuellen Sitzung** aktiv.
+- Erst **Speichern** schreibt sie in den Browser-Speicher (`localStorage`).
+- **Reset** stellt jederzeit den zuletzt gespeicherten Zustand wieder her — praktisch, um nach Experimenten zur eigenen Standard-Einstellung zurückzukehren.
+- Beim Neuladen der Seite werden die gespeicherten Werte automatisch wiederhergestellt.
+
+## Größenfilter (Blob-Analyse)
+
+In der Praxis ist Schweiß meist nur **wenige Millimeter bis ~3 cm** groß. Große zusammenhängende Rotflächen (Kleidung im Hintergrund, rote Schilder, Blätter eines Buchen-Astes) sind kein Schweiß. Der Größenfilter wertet deshalb nicht nur die Farbe, sondern auch die **zusammenhängende Fläche** jedes erkannten Bereichs aus:
+
+- Bereiche, die zu klein sind (Rauschen, einzelne rote Pixel), werden ignoriert.
+- Bereiche, die zu groß sind (Pulli im Hintergrund), werden ebenfalls ignoriert.
+- Nur Bereiche in der **plausiblen Tropfen-Größe** werden hervorgehoben.
+
+Annahme: Smartphone wird in ca. **50 cm Höhe** über dem Boden gehalten. Bei deutlich anderer Höhe (z. B. 1 m) den Slider **Tropfengröße** anpassen.
 
 ## Lokales Testen am Desktop
 
