@@ -12,9 +12,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-#video {
-  display: none;
-}
+#video { display: none; }
 
 #canvas {
   position: fixed;
@@ -26,6 +24,8 @@ html, body {
   background: #000;
 }
 
+/* ---------- obere Statusleiste ---------- */
+
 #overlay-top {
   position: fixed;
   top: env(safe-area-inset-top, 12px);
@@ -34,6 +34,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   pointer-events: none;
   font-size: 14px;
 }
@@ -42,7 +43,13 @@ html, body {
   background: rgba(0, 0, 0, 0.55);
   padding: 6px 10px;
   border-radius: 8px;
-  max-width: 75%;
+  max-width: 70%;
+}
+
+#top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #fps {
@@ -51,6 +58,28 @@ html, body {
   border-radius: 8px;
   font-variant-numeric: tabular-nums;
 }
+
+#settings-btn {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#settings-btn:active {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ---------- untere Bedienleiste ---------- */
 
 #controls {
   position: fixed;
@@ -105,4 +134,134 @@ html, body {
 
 #controls button:active:not(:disabled) {
   background: #00cccc;
+}
+
+#reset-btn {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+#reset-btn:active {
+  background: rgba(255, 255, 255, 0.30);
+}
+
+/* ---------- Einstellungs-Overlay ---------- */
+
+#settings-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 100;
+  overflow-y: auto;
+  padding: env(safe-area-inset-top, 16px) 0 env(safe-area-inset-bottom, 16px);
+}
+
+#settings-modal[hidden] {
+  display: none;
+}
+
+#settings-modal .modal-content {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+#settings-modal header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#settings-modal h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+#settings-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+#settings-close:active {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+#settings-modal section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#settings-modal section > label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#settings-modal .setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#settings-modal .setting-row label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#settings-modal #settings-sensitivity-display {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+#settings-modal .hint {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.segmented {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.segmented button {
+  flex: 1;
+  height: 44px;
+  background: transparent;
+  color: #fff;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.segmented button.active {
+  font-weight: 600;
+  color: #000;
+}
+
+.segmented button.active[data-color="cyan"] {
+  background: #00ffff;
+}
+
+.segmented button.active[data-color="yellow"] {
+  background: #ffff00;
+}
+
+.disabled-section {
+  opacity: 0.5;
 }

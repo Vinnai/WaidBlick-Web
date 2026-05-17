@@ -11,6 +11,13 @@ Markiert rot/braun-rote Bereiche (potenzielles Blut auf Waldboden) mit **Cyan**,
    - links (0) = streng, nur kräftige Rot-Töne
    - rechts (100) = locker, auch dunklere/bräunlichere Töne (mehr Treffer, mehr Fehlalarme)
 3. **Standbild** friert das Bild zur genaueren Betrachtung ein.
+4. **Reset** setzt Empfindlichkeit und Highlight-Farbe auf die Werkseinstellungen zurück und löscht die gespeicherten Einstellungen.
+5. **Zahnrad oben rechts** öffnet die Einstellungen — derzeit:
+   - **Highlight-Farbe** Cyan ↔ Gelb (je nach Lichtverhältnis am besten sichtbar)
+   - Anzeige der aktuell gespeicherten Empfindlichkeit
+   - Platzhalter für spätere ML-Modell-Konfiguration
+
+Empfindlichkeit und Highlight-Farbe werden im Browser persistent gespeichert (`localStorage`) und beim nächsten Öffnen automatisch wiederhergestellt — keine Cloud, keine Server.
 
 ## Lokales Testen am Desktop
 

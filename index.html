@@ -16,7 +16,10 @@
 
   <div id="overlay-top">
     <div id="status">Tippe „Start" und erlaube den Kamerazugriff</div>
-    <div id="fps"></div>
+    <div id="top-right">
+      <div id="fps"></div>
+      <button id="settings-btn" type="button" aria-label="Einstellungen">⚙</button>
+    </div>
   </div>
 
   <div id="controls">
@@ -26,8 +29,40 @@
     </div>
     <input type="range" id="sensitivity" min="0" max="100" value="50">
     <div class="buttons">
-      <button id="start-btn">Start</button>
-      <button id="freeze-btn" disabled>Standbild</button>
+      <button id="start-btn" type="button">Start</button>
+      <button id="freeze-btn" type="button" disabled>Standbild</button>
+      <button id="reset-btn" type="button">Reset</button>
+    </div>
+  </div>
+
+  <div id="settings-modal" hidden>
+    <div class="modal-content">
+      <header>
+        <h2>Einstellungen</h2>
+        <button id="settings-close" type="button" aria-label="Schließen">✕</button>
+      </header>
+
+      <section>
+        <div class="setting-row">
+          <label>Empfindlichkeit</label>
+          <span id="settings-sensitivity-display">50</span>
+        </div>
+        <p class="hint">Wird automatisch gespeichert und beim nächsten Start wiederhergestellt. Anpassbar über den Schieberegler im Hauptbildschirm.</p>
+      </section>
+
+      <section>
+        <label>Highlight-Farbe</label>
+        <div class="segmented" id="color-toggle">
+          <button type="button" data-color="cyan" class="active">Cyan</button>
+          <button type="button" data-color="yellow">Gelb</button>
+        </div>
+        <p class="hint">Cyan ist meist auf grünem Waldboden am besten sichtbar, Gelb bei dunklerem/feuchtem Laub.</p>
+      </section>
+
+      <section class="disabled-section">
+        <label>ML-Modell</label>
+        <p class="hint">Folgt in späterer Version — hier wird das trainierte Schweiß-Erkennungs-Modell konfiguriert.</p>
+      </section>
     </div>
   </div>
 
