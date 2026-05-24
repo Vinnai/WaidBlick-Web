@@ -2,7 +2,7 @@
 //
 // Bei Änderungen an den App-Dateien CACHE_NAME hochzählen — sonst behalten Nutzer die alte Version.
 
-const CACHE_NAME = "waidblick-v1";
+const CACHE_NAME = "waidblick-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const ASSETS = [
   "./style.css",
   "./manifest.webmanifest",
   "./lib/ort/ort.min.js",
+  "./lib/ort/ort-wasm-simd-threaded.mjs",
   "./lib/ort/ort-wasm-simd-threaded.wasm",
   "./models/best.onnx",
 ];

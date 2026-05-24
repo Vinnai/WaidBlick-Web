@@ -4,9 +4,10 @@ Damit die App auch ohne Internet funktioniert (Wald-Einsatz), liegt die Inferenz
 
 **Erwartete Dateien:**
 - `ort.min.js` (~440 KB) — JavaScript-Entry
+- `ort-wasm-simd-threaded.mjs` (~25 KB) — Wasm-Loader-Modul (zur Laufzeit dynamisch von ort.min.js geladen)
 - `ort-wasm-simd-threaded.wasm` (~11 MB) — Wasm-Backend mit SIMD
 
-Beide sind per `.gitignore` ausgeschlossen.
+Alle drei sind per `.gitignore` ausgeschlossen.
 
 ## So lädst du sie herunter
 
@@ -14,6 +15,7 @@ Beide sind per `.gitignore` ausgeschlossen.
 cd C:\Projekte\WaidBlick-Web\public\lib\ort
 
 curl -O https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/ort.min.js
+curl -O https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/ort-wasm-simd-threaded.mjs
 curl -O https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/ort-wasm-simd-threaded.wasm
 ```
 
