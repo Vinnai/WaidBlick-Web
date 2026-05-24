@@ -264,6 +264,10 @@ html, body {
   background: #ffff00;
 }
 
+.segmented button.active[data-mode] {
+  background: #00ffff;
+}
+
 .disabled-section {
   opacity: 0.5;
 }

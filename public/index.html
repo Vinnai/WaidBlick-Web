@@ -69,15 +69,20 @@
         <p class="hint">Cyan ist meist auf grünem Waldboden am besten sichtbar, Gelb bei dunklerem/feuchtem Laub.</p>
       </section>
 
-      <section class="disabled-section">
-        <label>ML-Modell</label>
-        <p class="hint">Folgt in späterer Version — hier wird das trainierte Schweiß-Erkennungs-Modell konfiguriert.</p>
+      <section>
+        <label>Erkennungsmodus</label>
+        <div class="segmented" id="mode-toggle">
+          <button type="button" data-mode="hsv" class="active">HSV (klassisch)</button>
+          <button type="button" data-mode="ml">ML (Beta)</button>
+        </div>
+        <p class="hint" id="mode-hint">HSV: Farbfilter mit Größenfilter, robust und schnell. ML (Beta): trainiertes Modell, präziser bei guten Daten — derzeit noch unzuverlässig wegen kleinem Trainingsdatensatz.</p>
       </section>
 
       <button id="save-btn" type="button">Speichern</button>
     </div>
   </div>
 
+  <script src="lib/ort/ort.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

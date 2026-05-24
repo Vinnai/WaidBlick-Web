@@ -7,3 +7,12 @@ Thumbs.db
 # Lokale Notizen / Entwürfe
 *.local.*
 notes.local.md
+
+# ML-Modelle (groß, kommen aus WaidBlick-ML)
+public/models/*.onnx
+public/models/*.pt
+public/models/*.tflite
+
+# ONNX Runtime Web Library (groß, lokal heruntergeladen für Offline-Nutzung)
+public/lib/ort/*.wasm
+public/lib/ort/*.js
