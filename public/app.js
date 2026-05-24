@@ -164,8 +164,8 @@ async function loadMLModel() {
     if (typeof ort === "undefined") {
       throw new Error("ONNX Runtime nicht geladen — fehlt lib/ort/ort.min.js?");
     }
-    // ES-Modul-Imports brauchen "./" oder absolute URL als Präfix
-    ort.env.wasm.wasmPaths = "./lib/ort/";
+    // Absolute URL nötig: ORT 1.20 löst wasmPaths relativ zu ort.min.js auf, nicht zur Seite
+    ort.env.wasm.wasmPaths = new URL("./lib/ort/", document.baseURI).href;
     mlSession = await ort.InferenceSession.create(MODEL_URL, {
       executionProviders: ["wasm"],
     });
