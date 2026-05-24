@@ -166,6 +166,10 @@ async function loadMLModel() {
     }
     // Absolute URL nötig: ORT 1.20 löst wasmPaths relativ zu ort.min.js auf, nicht zur Seite
     ort.env.wasm.wasmPaths = new URL("./lib/ort/", document.baseURI).href;
+    // Single-Threaded erzwingen: SharedArrayBuffer braucht COOP/COEP-Header,
+    // die Cloudflare-Tunnel + python http.server nicht setzen. Ohne den Hint
+    // hängt InferenceSession.create() bei der Thread-Initialisierung.
+    ort.env.wasm.numThreads = 1;
     mlSession = await ort.InferenceSession.create(MODEL_URL, {
       executionProviders: ["wasm"],
     });
