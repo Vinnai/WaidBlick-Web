@@ -195,6 +195,8 @@ function updateMLStatus() {
     statusEl.textContent = "ML-Modell wird geladen …";
   } else if (mlLoaded && running) {
     statusEl.textContent = `Live (ML) — ${video.videoWidth}×${video.videoHeight}`;
+  } else if (mlLoaded) {
+    statusEl.textContent = "ML-Modell bereit — „Start" tippen";
   }
 }
 
