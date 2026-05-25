@@ -43,10 +43,10 @@ Reines HTML/JS — kein Build, keine Abhängigkeiten. Einfach in Chrome/Firefox/
 Empfohlen: über einen lokalen HTTP-Server, weil `getUserMedia` auf `file://` blockiert wird:
 
 ```powershell
-# Aus dem Projektordner heraus — wichtig: --directory public,
+# Aus dem Projektordner heraus — wichtig: --directory docs,
 # damit der .git-Ordner NICHT mit ausgeliefert wird.
 cd c:\Projekte\WaidBlick-Web
-python -m http.server 8000 --directory public
+python -m http.server 8000 --directory docs
 # → http://localhost:8000 im Browser öffnen
 ```
 
@@ -65,9 +65,9 @@ winget install --id Cloudflare.cloudflared
 **Jede Test-Sitzung:**
 
 ```powershell
-# Terminal 1 — lokaler Server, ausgeliefert wird nur public/
+# Terminal 1 — lokaler Server, ausgeliefert wird nur docs/
 cd c:\Projekte\WaidBlick-Web
-python -m http.server 8000 --directory public
+python -m http.server 8000 --directory docs
 
 # Terminal 2 — Tunnel
 cloudflared tunnel --url http://localhost:8000
@@ -95,12 +95,15 @@ Die URL ist nur für die Laufzeit dieses Tunnels gültig — bei jedem Neustart 
 
 ```
 WaidBlick-Web/
-├── public/                  # was öffentlich ausgeliefert wird
+├── docs/                    # was öffentlich ausgeliefert wird (GitHub Pages serviert von hier)
 │   ├── index.html           # UI: Video, Canvas, Slider, Buttons
 │   ├── style.css            # Vollbild-Layout, iOS-Anpassungen
-│   ├── app.js               # Kamera + HSV-Filter + Größenfilter
-│   └── manifest.webmanifest # PWA-Grundlage
+│   ├── app.js               # Kamera + HSV-Filter + ML-Inferenz
+│   ├── manifest.webmanifest # PWA-Grundlage
+│   ├── sw.js                # Service Worker für Offline-Nutzung
+│   ├── lib/ort/             # ONNX Runtime Web (lokal, ~12 MB)
+│   └── models/              # YOLOv8-Modell best.onnx (~12 MB)
 ├── README.md
 ├── .gitignore
-└── .git/                    # NICHT öffentlich exponieren — daher public/ als Webroot
+└── .git/                    # NICHT öffentlich exponieren — daher docs/ als Webroot
 ```

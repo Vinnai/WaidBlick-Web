@@ -8,12 +8,7 @@ Thumbs.db
 *.local.*
 notes.local.md
 
-# ML-Modelle (groß, kommen aus WaidBlick-ML)
-public/models/*.onnx
-public/models/*.pt
-public/models/*.tflite
-
-# ONNX Runtime Web Library (groß, lokal heruntergeladen für Offline-Nutzung)
-public/lib/ort/*.wasm
-public/lib/ort/*.js
-public/lib/ort/*.mjs
+# ML-Modelle und ONNX Runtime werden für GitHub Pages mit-committed
+# (24 MB Mehrgewicht, dafür dauerhaft erreichbare URL).
+# Bei künftigen Modell-Updates: einfach docs/models/best.onnx austauschen,
+# committen, pushen — GitHub Pages aktualisiert sich automatisch.
