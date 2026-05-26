@@ -40,6 +40,12 @@ const MODEL_URL = "models/best.onnx";
 const ML_INPUT_SIZE = 640;
 const ML_CONF_THRESH = 0.25;
 const ML_IOU_THRESH = 0.45;
+// Box-Persistenz: leere Inferenz-Ergebnisse überschreiben die letzte Detektion nicht
+// sofort, sondern die Box bleibt bis ML_BOX_PERSIST_MS sichtbar. Zwischen
+// ML_BOX_FADE_START_MS und ML_BOX_PERSIST_MS fadet sie linear aus. Glättet das
+// typische Flackern an der Confidence-Schwelle.
+const ML_BOX_PERSIST_MS = 1500;
+const ML_BOX_FADE_START_MS = 1000;
 
 let stream = null;
 let running = false;
@@ -313,29 +319,61 @@ function iou(a, b) {
   return inter / (areaA + areaB - inter);
 }
 
-function drawMLBoxes(targetCtx, boxes) {
+function drawMLBoxes(targetCtx, boxes, now) {
   if (!boxes.length) return;
+  // Veraltete Boxen herausfiltern. Was übrig bleibt, wird ggf. ausgefadet.
+  const fresh = boxes.filter((box) => now - box.ts < ML_BOX_PERSIST_MS);
+  if (!fresh.length) return;
+
   const [r, g, b] = HIGHLIGHT_COLORS[highlightColor];
   const color = `rgb(${r}, ${g}, ${b})`;
+  const fontSize = Math.max(28, Math.round(canvas.width / 30));
+  const padX = 10;
+  const padY = 6;
+  const boxLineWidth = Math.max(4, Math.round(canvas.width / 200));
 
-  targetCtx.strokeStyle = color;
-  targetCtx.lineWidth = Math.max(3, Math.round(canvas.width / 250));
-  const fontSize = Math.max(16, Math.round(canvas.width / 60));
   targetCtx.font = `bold ${fontSize}px sans-serif`;
   targetCtx.textBaseline = "alphabetic";
+  targetCtx.lineJoin = "round";
 
-  for (const box of boxes) {
+  for (const box of fresh) {
+    const age = now - box.ts;
+    let alpha = 1.0;
+    if (age > ML_BOX_FADE_START_MS) {
+      alpha = 1 - (age - ML_BOX_FADE_START_MS) / (ML_BOX_PERSIST_MS - ML_BOX_FADE_START_MS);
+    }
+    targetCtx.globalAlpha = alpha;
+
     const w = box.x2 - box.x1;
     const h = box.y2 - box.y1;
+    targetCtx.strokeStyle = color;
+    targetCtx.lineWidth = boxLineWidth;
     targetCtx.strokeRect(box.x1, box.y1, w, h);
 
     const label = `${(box.conf * 100).toFixed(0)}%`;
     const textW = targetCtx.measureText(label).width;
+    const labelW = textW + padX * 2;
+    const labelH = fontSize + padY * 2;
+    const labelX = box.x1;
+    const labelY = box.y1 - labelH;
+
+    // Label-Hintergrund: cyan-Block mit schwarzem Rand für Kanten-Definition
     targetCtx.fillStyle = color;
-    targetCtx.fillRect(box.x1, box.y1 - fontSize - 6, textW + 10, fontSize + 6);
+    targetCtx.fillRect(labelX, labelY, labelW, labelH);
+    targetCtx.strokeStyle = "black";
+    targetCtx.lineWidth = 2;
+    targetCtx.strokeRect(labelX, labelY, labelW, labelH);
+
+    // Text: schwarz mit weißer Outline — gut lesbar auf Cyan, auch wenn der
+    // Hintergrund durch Skalierung leicht artefaktet.
+    const textY = labelY + fontSize + padY - 2;
+    targetCtx.lineWidth = 4;
+    targetCtx.strokeStyle = "white";
+    targetCtx.strokeText(label, labelX + padX, textY);
     targetCtx.fillStyle = "black";
-    targetCtx.fillText(label, box.x1 + 5, box.y1 - 6);
+    targetCtx.fillText(label, labelX + padX, textY);
   }
+  targetCtx.globalAlpha = 1.0;
 }
 
 // ---------- Event-Bindings ----------
@@ -475,13 +513,22 @@ function processFrame(ts) {
       );
       ctx.putImageData(imageData, 0, 0);
     } else if (detectionMode === "ml") {
-      // Zeichne die letzte (möglicherweise leicht veraltete) Box-Liste auf das frische Frame
-      drawMLBoxes(ctx, latestMLBoxes);
-      // Neue Inferenz im Hintergrund (sofern nicht eine schon läuft)
+      const now = performance.now();
+      // Zeichne die letzte Box-Liste (mit Decay) auf das frische Frame.
+      drawMLBoxes(ctx, latestMLBoxes, now);
+      // Neue Inferenz im Hintergrund (sofern nicht eine schon läuft).
       if (mlLoaded && !mlInferenceInFlight) {
         mlInferenceInFlight = true;
         runMLInference(canvas)
-          .then((boxes) => { latestMLBoxes = boxes; })
+          .then((boxes) => {
+            if (boxes.length > 0) {
+              // Erfolgreiche Detektion: Boxen mit aktuellem Zeitstempel ablegen.
+              const ts = performance.now();
+              latestMLBoxes = boxes.map((b) => ({ ...b, ts }));
+            }
+            // Leere Detektion: alte Boxen bewusst NICHT überschreiben — drawMLBoxes
+            // fadet sie nach ML_BOX_FADE_START_MS aus und entfernt sie nach ML_BOX_PERSIST_MS.
+          })
           .catch((err) => { console.error("ML-Inferenz-Fehler:", err); })
           .finally(() => { mlInferenceInFlight = false; });
       }
